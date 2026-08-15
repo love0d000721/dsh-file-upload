@@ -40,3 +40,5 @@ if (failCount > 0) {
   for (const f of failures) console.log(`  - [${f.suite}] ${f.name}: ${f.error && f.error.message}`)
   process.exit(1)
 }
+// Exit explicitly so leaked handles from real-timer fakes cannot hang CI.
+process.exit(0)

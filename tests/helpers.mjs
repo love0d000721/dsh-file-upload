@@ -44,7 +44,7 @@ export async function loadClientPlugin(bodyText, deps) {
 }
 
 /** Minimal fake ctx: get() from a map, effect() captures callbacks, timeout() records. */
-export function fakeCtx({ services = {}, runEffects = false } = {}) {
+export function fakeCtx({ services = {}, runEffects = false, realTimers = false } = {}) {
   const effects = []
   const timeouts = []
   return {
@@ -59,7 +59,16 @@ export function fakeCtx({ services = {}, runEffects = false } = {}) {
       }
       return () => {}
     },
-    timeout(fn, ms) { timeouts.push({ fn, ms }); return () => {} },
+    timeout(fn, ms) {
+      if (realTimers) return setTimeout(() => fn(), ms)
+      timeouts.push({ fn, ms })
+      return () => {}
+    },
+    interval(fn, ms) {
+      if (realTimers) return setInterval(() => fn(), ms)
+      timeouts.push({ fn, ms, interval: true })
+      return () => {}
+    },
   }
 }
 

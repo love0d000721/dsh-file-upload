@@ -203,6 +203,7 @@ return {
     let state = {
       pending: null,
       picking: false,
+      pendingHotkeyPick: false,
       hotkey: 'ctrl+shift+u',
       recording: false,
       lang: 'zh',
@@ -296,6 +297,15 @@ return {
     function Trigger(props) {
       const [snap, setSnap] = React.useState(getState())
       React.useEffect(() => subscribe(setSnap), [])
+      // The global hotkey sets pendingHotkeyPick; this session-scoped
+      // component performs the actual pick so host.call always routes through
+      // a session context (identical to the button path — a document-level
+      // call can wedge the RPC).
+      React.useEffect(() => {
+        if (!snap.pendingHotkeyPick) return
+        setState({ pendingHotkeyPick: false })
+        void pick(props.sessionId)
+      }, [snap.pendingHotkeyPick])
       return React.createElement('button', {
         className: 'dsh-upload-trigger',
         title: t('triggerTitle', { hotkey: __u.comboLabel(snap.hotkey) }),
@@ -506,7 +516,9 @@ return {
         if (__u.matchesHotkey(e, state.hotkey)) {
           e.preventDefault()
           e.stopPropagation()
-          void pick(null)
+          // Do NOT call pick() from here: host.call needs a session context.
+          // Set a flag; the session-scoped Trigger component performs the pick.
+          setState({ pendingHotkeyPick: true })
         }
       }
       document.addEventListener('keydown', onKeydown, true)

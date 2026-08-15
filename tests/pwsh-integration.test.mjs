@@ -4,7 +4,7 @@
 // syntax-checked only.
 
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { ROOT } from './helpers.mjs'
@@ -57,6 +57,7 @@ const common = [
       try {
         const src = path.join(base, 'src')
         const dest = path.join(base, 'dest')
+        mkdirSync(src)
         writeFileSync(path.join(src, '甲文件.txt'), 'hi', 'utf8')
         const r = run('copy.ps1', { stdinJson: { destRoot: dest, paths: [path.join(src, '甲文件.txt'), path.join(src, 'missing.txt')] } })
         if (r.status !== 0) throw new Error('copy.ps1 exit ' + r.status + ': ' + r.stderr)

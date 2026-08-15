@@ -2,6 +2,21 @@
 
 All notable changes to dsh-file-upload.
 
+## [0.2.2] - 2025-01
+
+### Fixed
+- **Hotkey hung at "Selecting…" while the button worked** — the global keydown
+  listener called `pick()` directly, so `host.call` ran without a session
+  context and the RPC could wedge. The hotkey now sets a `pendingHotkeyPick`
+  flag; the session-scoped composer Trigger performs the actual pick, making
+  the hotkey path identical to the button path.
+- **Long waits on a wedged dialog spawn** — the pre-dialog READY cap was
+  lowered from 15s to **5s** per candidate, so a wedged Store-alias spawn
+  falls through to the next engine (e.g. Windows PowerShell 5.1) in seconds.
+
+### Changed
+- `waitForReady` cap: 15s → 5s (`src/host/body.js`).
+
 ## [0.2.1] - 2025-01
 
 ### Fixed

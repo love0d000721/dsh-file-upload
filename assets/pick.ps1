@@ -10,6 +10,8 @@ $dialogScript = {
   $d.Filter = 'All files (*.*)|*.*'
   $d.Multiselect = $true
   $d.CheckFileExists = $true
+  [Console]::Out.WriteLine('READY')
+  [Console]::Out.Flush()
   $r = $d.ShowDialog()
   if ($r.ToString() -eq 'OK') {
     [pscustomobject]@{ cancelled = $false; paths = @($d.FileNames) } | ConvertTo-Json -Compress

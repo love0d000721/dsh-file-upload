@@ -24,10 +24,11 @@ function resolveFor({ alias = true, ps51 = true } = {}) {
 // spawnImpl scenarios:
 //   - cmd spawn (where/echo) → collect stdout with the configured text.
 //   - pwsh one-shot spawn (argv[4] === '-Command', collect stdout):
-//       * if failPaths includes argv[0] → exit non-zero (simulates a path that
-//         resolves but cannot run).
-//       * otherwise → the pick/copy JSON result.
-function makeSpawn({ whereOut = `${ALIAS}\n`, localAppDataOut = 'C:\\Users\\tester\\AppData\\Local', failPaths = [], pickOut = null, copyOut = null } = {}) {
+//       * if noReadyPaths includes argv[0] → stdout WITHOUT the READY marker
+//         (simulates a Store-alias spawn that wedges before the dialog).
+//       * if failPaths includes argv[0] → READY present but exit non-zero.
+//       * otherwise → READY + the pick/copy JSON result.
+function makeSpawn({ whereOut = `${ALIAS}\n`, localAppDataOut = 'C:\\Users\\tester\\AppData\\Local', failPaths = [], noReadyPaths = [], pickOut = null, copyOut = null } = {}) {
   return (spec) => {
     const argv0 = spec.argv[0]
     if (argv0 === CMD) {
@@ -40,9 +41,12 @@ function makeSpawn({ whereOut = `${ALIAS}\n`, localAppDataOut = 'C:\\Users\\test
     const isScript = spec.argv[4] === '-Command' && spec.stdio.stdout && typeof spec.stdio.stdout === 'object'
     if (isScript) {
       const isPick = /ShowDialog/.test(spec.argv[5] || '')
-      const text = isPick ? ((pickOut || '{"cancelled":false,"paths":["D:\\\\x\\\\a.txt"]}') + '\n')
-        : ((copyOut || '[{"source":"D:\\\\x\\\\a.txt","ok":true,"error":null,"dest":"D:\\\\WS\\\\uploads\\\\a.txt"}]') + '\n')
-      const h = fakeHandle({ stdoutText: text, exitCode: failPaths.includes(argv0) ? 1 : 0 })
+      const result = isPick ? (pickOut || '{"cancelled":false,"paths":["D:\\\\x\\\\a.txt"]}')
+        : (copyOut || '[{"source":"D:\\\\x\\\\a.txt","ok":true,"error":null,"dest":"D:\\\\WS\\\\uploads\\\\a.txt"}]')
+      const noReady = noReadyPaths.includes(argv0)
+      const fail = failPaths.includes(argv0)
+      const stdoutText = noReady ? 'STARTING\n' : ('READY\n' + result + '\n')
+      const h = fakeHandle({ stdoutText, exitCode: fail ? 1 : 0 })
       h.settle()
       return h
     }
@@ -50,8 +54,8 @@ function makeSpawn({ whereOut = `${ALIAS}\n`, localAppDataOut = 'C:\\Users\\test
   }
 }
 
-async function boot({ resolve, spawnImpl }) {
-  const ctx = fakeCtx({ services: { subprocess: fakeSubprocess({ resolve, spawnImpl }), sandboxPolicy: { workspaceRoot: 'D:\\WS' } } })
+async function boot({ resolve, spawnImpl, realTimers = false }) {
+  const ctx = fakeCtx({ services: { subprocess: fakeSubprocess({ resolve, spawnImpl }), sandboxPolicy: { workspaceRoot: 'D:\\WS' } }, realTimers })
   const harness = fakeHarness()
   const body = await readBody('src/host/body.js')
   const plugin = await loadHostPlugin(body, { ctx, harness, console })
@@ -97,7 +101,8 @@ export const tests = [
   {
     name: 'a path that resolves but cannot run falls through to the next candidate',
     async fn() {
-      // ALIAS resolves first but its spawn exits non-zero → the ps51 path runs.
+      // ALIAS resolves first but its spawn exits non-zero (after READY) →
+      // the ps51 path runs.
       const { harness } = await boot({
         resolve: resolveFor(),
         spawnImpl: makeSpawn({ failPaths: [ALIAS] }),
@@ -106,6 +111,22 @@ export const tests = [
       if (!res || res.error) throw new Error('expected a successful fallback, got ' + JSON.stringify(res))
       if (res.paths[0] !== 'D:\\x\\a.txt') throw new Error('fallback spawn did not run')
       if (res.engine !== 'ps51') throw new Error('expected engine from the fallback path (ps51), got ' + res.engine)
+    },
+  },
+  {
+    name: 'a wedged candidate (no READY) is abandoned and the next one runs',
+    async fn() {
+      // ALIAS spawns but never shows the dialog (no READY) → after the 15s
+      // cap the host abandons it and runs the ps51 path. Real timers needed.
+      const { harness } = await boot({
+        resolve: resolveFor(),
+        spawnImpl: makeSpawn({ noReadyPaths: [ALIAS] }),
+        realTimers: true,
+      })
+      const res = await harness.handlers['pick-files']()
+      if (!res || res.error) throw new Error('expected a successful fallback, got ' + JSON.stringify(res))
+      if (res.paths[0] !== 'D:\\x\\a.txt') throw new Error('fallback spawn did not run')
+      if (res.engine !== 'ps51') throw new Error('expected ps51 after wedged candidate, got ' + res.engine)
     },
   },
   {

@@ -41,6 +41,8 @@ $dialogScript = {
   $d.Filter = 'All files (*.*)|*.*'
   $d.Multiselect = $true
   $d.CheckFileExists = $true
+  [Console]::Out.WriteLine('READY')
+  [Console]::Out.Flush()
   $r = $d.ShowDialog()
   if ($r.ToString() -eq 'OK') {
     [pscustomobject]@{ cancelled = $false; paths = @($d.FileNames) } | ConvertTo-Json -Compress
@@ -211,9 +213,12 @@ $results | ConvertTo-Json -Compress -Depth 4
     }
 
     // Spawn ONE short-lived PowerShell process for `script` and collect stdout.
-    // Tries each resolved candidate until one actually runs (the first spawn
-    // that neither fails at spawn-time nor exits non-zero wins).
-    async function runPwsh(script, stdinData) {
+    // Tries each resolved candidate until one actually runs. For pick mode
+    // (`expectReady`) the script must emit a READY line before showing the
+    // dialog: a candidate that never reaches READY within 15s is wedged
+    // (Store-alias spawns are known to hang pre-dialog) — it is terminated
+    // and the next candidate is tried, so a pick can never hang.
+    async function runPwsh(script, stdinData, expectReady) {
       const sp = subprocess()
       if (sp === undefined) throw new Error('subprocess service unavailable')
       const root = workspaceRoot()
@@ -233,6 +238,13 @@ $results | ConvertTo-Json -Compress -Depth 4
             },
             graceMs: 60000,
           })
+          if (expectReady) {
+            const ready = await waitForReady(handle, 5000)
+            if (!ready) {
+              try { handle.terminate() } catch (e) {}
+              throw new Error('dialog did not open in time (wedged candidate: ' + path + ')')
+            }
+          }
           const outcome = await handle.done
           const stdout = handle.collected && handle.collected.stdout ? handle.collected.stdout.readFrom(0).text : ''
           const stderr = handle.collected && handle.collected.stderr ? handle.collected.stderr.readFrom(0).text : ''
@@ -240,13 +252,40 @@ $results | ConvertTo-Json -Compress -Depth 4
             const detail = stderr.trim()
             throw new Error('PowerShell exit ' + outcome.exitCode + (detail ? ': ' + detail.slice(0, 400) : ''))
           }
-          return { stdout, engine: engineOf(path) }
+          const lines = stdout.split(/\r?\n/).map((s) => s.trim()).filter((s) => s.length > 0 && s !== 'READY')
+          return { stdout: lines.join('\n'), engine: engineOf(path) }
         } catch (err) {
           if (handle && !handle.terminated) { try { handle.terminate() } catch (e) {} }
           lastError = err
         }
       }
       throw lastError || new Error('no usable PowerShell')
+    }
+
+    // Poll the collected stdout until the script signals READY (dialog shown),
+    // or fail after `timeoutMs`. A synchronous first check avoids needing the
+    // timer when the process already wrote the marker.
+    function waitForReady(handle, timeoutMs) {
+      return new Promise((resolve) => {
+        const check = () => {
+          let text = ''
+          try {
+            text = handle.collected && handle.collected.stdout ? handle.collected.stdout.readFrom(0).text : ''
+          } catch (e) { /* not ready */ }
+          return text.includes('READY')
+        }
+        if (check()) { resolve(true); return }
+        let settled = false
+        const finish = (v) => {
+          if (settled) return
+          settled = true
+          try { iv() } catch (e) {}
+          try { to() } catch (e) {}
+          resolve(v)
+        }
+        const iv = ctx.interval(() => { if (check()) finish(true) }, 400)
+        const to = ctx.timeout(() => finish(false), timeoutMs)
+      })
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -260,10 +299,12 @@ $results | ConvertTo-Json -Compress -Depth 4
         const destRoot = root + '\\uploads'
         // Resolve the engine with a 20s cap (resolution is spawn-free, so a
         // timeout here means the subprocess service itself is wedged).
-        const resolved = await withTimeout(resolvePwshPaths(), 20000, 'PowerShell 定位超时（subprocess 服务无响应）')
-        // The dialog may stay open as long as the user wants; the 10-minute cap
-        // only guards against a spawn that never shows a dialog.
-        const { stdout, engine } = await withTimeout(runPwsh(PICK_PS1), 600000, '文件对话框进程无响应（10 分钟超时）')
+        await withTimeout(resolvePwshPaths(), 20000, 'PowerShell 定位超时（subprocess 服务无响应）')
+        // Pick mode: the script signals READY before showing the dialog, and
+        // runPwsh fails fast (15s per candidate) if a candidate wedges, then
+        // falls through to the next one. After READY the dialog is open, so
+        // there is no timeout — the user decides when to close it.
+        const { stdout, engine } = await runPwsh(PICK_PS1, undefined, true)
         const text = stdout.trim()
         if (!text) return { cancelled: true, paths: [], destRoot, workspaceRoot: root, engine }
         const data = JSON.parse(text)
