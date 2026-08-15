@@ -18,9 +18,9 @@ Windows PowerShell 5.1 兜底），随后在图形化界面中选择**复制文�
 
 | 设置页 —— 快捷键 / 语言 / 隐私开关 |
 |---|
-| <img src="docs/screenshots/settings.png" width="420" alt="设置页"> |
+| <img src="docs/screenshots/settings.png" width="560" alt="设置页"> |
 
-*出于隐私考虑只展示设置页：其他界面会显示文件名/路径，不放入公开仓库。*
+出于隐私考虑只发布设置页：其他界面会显示文件名/路径，不放入公开仓库。
 
 ---
 

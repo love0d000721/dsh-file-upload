@@ -19,10 +19,10 @@ workspace**, **insert a safe file list into the composer**, or **both**. The UI 
 
 | Settings — hotkey / language / privacy controls |
 |---|
-| <img src="docs/screenshots/settings.png" width="420" alt="settings"> |
+| <img src="docs/screenshots/settings.png" width="560" alt="settings"> |
 
-*Only the settings page is shown here on purpose: other dialogs display file
-names/paths and are kept out of this public repo.*
+Only the settings page is published on purpose: other dialogs display file
+names/paths and are kept out of this public repo.
 
 ---
 
