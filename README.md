@@ -15,13 +15,14 @@ workspace**, **insert a safe file list into the composer**, or **both**. The UI 
 
 ---
 
-## Screenshots
+## Screenshot
 
-| Native file dialog | Choose upload mode | Settings |
-|---|---|---|
-| <img src="docs/screenshots/dialog.png" width="260" alt="file dialog"> | <img src="docs/screenshots/chooser.png" width="260" alt="chooser"> | <img src="docs/screenshots/settings.png" width="260" alt="settings"> |
+| Settings — hotkey / language / privacy controls |
+|---|
+| <img src="docs/screenshots/settings.png" width="420" alt="settings"> |
 
-*Screenshots live in `docs/screenshots/`. Add or replace them and re-run the commit.*
+*Only the settings page is shown here on purpose: other dialogs display file
+names/paths and are kept out of this public repo.*
 
 ---
 

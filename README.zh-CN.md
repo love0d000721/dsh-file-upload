@@ -16,11 +16,11 @@ Windows PowerShell 5.1 兜底），随后在图形化界面中选择**复制文�
 
 ## 截图
 
-| 原生文件对话框 | 选择上传方式 | 设置页 |
-|---|---|---|
-| <img src="docs/screenshots/dialog.png" width="260" alt="文件对话框"> | <img src="docs/screenshots/chooser.png" width="260" alt="三选一弹窗"> | <img src="docs/screenshots/settings.png" width="260" alt="设置页"> |
+| 设置页 —— 快捷键 / 语言 / 隐私开关 |
+|---|
+| <img src="docs/screenshots/settings.png" width="420" alt="设置页"> |
 
-*截图存放在 `docs/screenshots/` 目录；新增或替换后重新提交即可。*
+*出于隐私考虑只展示设置页：其他界面会显示文件名/路径，不放入公开仓库。*
 
 ---
 
