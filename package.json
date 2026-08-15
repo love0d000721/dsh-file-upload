@@ -1,0 +1,33 @@
+{
+  "name": "dsh-file-upload",
+  "version": "0.2.1",
+  "description": "Windows file upload for DeepSeek Harness: a configurable hotkey opens the native file dialog (PowerShell 7 first, Windows PowerShell 5.1 fallback), then a graphical chooser lets you copy files into the workspace, insert paths into the composer, or both. Bilingual UI (zh/en).",
+  "type": "module",
+  "main": "src/host/body.js",
+  "license": "MIT",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "windows",
+    "file-upload",
+    "pwsh"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node tests/run-tests.mjs",
+    "sync:assets": "node scripts/sync-assets.mjs",
+    "check:drift": "node tests/drift.test.mjs"
+  },
+  "files": [
+    "src",
+    "assets",
+    "docs",
+    "README.md",
+    "README.zh-CN.md",
+    "CHANGELOG.md",
+    "cordis.row.yml"
+  ]
+}

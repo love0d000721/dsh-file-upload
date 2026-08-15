@@ -1,0 +1,13 @@
+# Example host-composition row for dsh-file-upload (Path B, see docs/INSTALL.md).
+#
+# A patch overlay over the web profile. `name` is a RELATIVE module path resolved
+# against the composition file, so this directory can live anywhere the harness
+# process can read (clone the repo next to your profile, or reference an absolute
+# path). Requires a harness restart to take effect.
+#
+# NOTE: this mounts the HOST half. The client half (browser UI) is currently
+# loaded through the dynamic path (Path A) — see docs/INSTALL.md for status.
+
+- insert:
+    - id: dsh-file-upload
+      name: './dsh-file-upload/plugin.host.mjs'
