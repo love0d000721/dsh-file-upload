@@ -1,20 +1,34 @@
 # dsh-file-upload
 
+<p align="center">
+  <a href="./README.md"><img src="https://img.shields.io/badge/English-Readme-blue?style=for-the-badge" alt="English"></a>
+  <a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/中文-说明文档-red?style=for-the-badge" alt="中文"></a>
+</p>
+
 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供的 Windows 文件上传插件：
-通过**可自定义快捷键**唤起 Windows 原生文件选择对话框（基于 **PowerShell 7**，带明确标注的
+通过**可自定义快捷键**唤起 **Windows 原生文件选择对话框**（基于 **PowerShell 7**，带明确标注的
 Windows PowerShell 5.1 兜底），随后在图形化界面中选择**复制文件到工作区**、**以安全格式插入输入框**、
-或**两者都要**。界面支持**中英双语切换**（设置中可选）。**隐私默认受保护**——见[隐私](#隐私)。
+或**两者都要**。界面支持**中英双语切换**。**隐私默认受保护**——见[隐私](#隐私)。
 
 > ⚠️ 仅支持 Windows。需要 PowerShell 7（推荐）或系统自带的 Windows PowerShell 5.1。
 
-[English](./README.md)
+---
+
+## 截图
+
+| 原生文件对话框 | 选择上传方式 | 设置页 |
+|---|---|---|
+| <img src="docs/screenshots/dialog.png" width="260" alt="文件对话框"> | <img src="docs/screenshots/chooser.png" width="260" alt="三选一弹窗"> | <img src="docs/screenshots/settings.png" width="260" alt="设置页"> |
+
+*截图存放在 `docs/screenshots/` 目录；新增或替换后重新提交即可。*
+
+---
 
 ## 功能
 
 - **快捷键**：默认 `Ctrl+Shift+U`——在设置中可录制任意组合键（点击按键 → 按下新组合 → 生效，Esc 取消）。
 - **可靠且简单**：每次唤起只启动**一个短生命周期 PowerShell 进程**（不再使用常驻服务——那套机制在部分环境下导致卡死，已移除）。引擎路径解析**不启动探测进程**，每一步等待都有**硬超时**，因此绝不可能卡死。
-- **引擎发现**：PowerShell 7 优先（MSI → PATH → `where pwsh` → Store 别名 → Chocolatey），每个候选
-  用真实 spawn 探测；全部失败才降级系统自带 5.1 并明确标注。结果缓存。
+- **引擎发现**：PowerShell 7 优先（MSI → PATH → `where pwsh` → Store 别名 → Chocolatey），全部失败才降级系统自带 5.1 并明确标注；每个候选逐个尝试直到真正可用，结果缓存。
 - **三种上传方式**（图形化选择，无需改代码）：
   - 📁 **复制到工作区** —— 文件复制到 `<工作区>\uploads\`（重名自动变 `name (1).ext`），agent 可直接读取。
   - ✏️ **插入输入框** —— 以安全格式把文件清单加入对话输入框。
@@ -76,11 +90,8 @@ PowerShell 脚本以 `assets/` 为可审阅的规范源；`tests/drift.test.mjs`
 
 ## 故障排查
 
-- **"No usable PowerShell found"** —— 安装 PowerShell 7：
-  <https://github.com/PowerShell/PowerShell/releases>；插件也接受系统自带 5.1（弹窗中会标注）。
-- **首次唤起约 1 秒** —— 首次包含引擎发现（路径缓存后，后续唤起更快）；如报错，错误文案会指出具体失败的步骤（引擎发现不启动进程、每步都有超时，不可能无限等待）。
-- **应用商店安装的 PowerShell** —— 发现链会自动解析商店别名
-  （`%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe`）。
+- **"open dialog failed"** —— 首次唤起约 1 秒（含引擎发现，路径缓存后更快）；如报错，错误文案会指出具体失败的步骤（引擎发现不启动进程、每步都有超时，不可能无限等待）。
+- **应用商店安装的 PowerShell** —— 发现链会自动解析商店别名（`%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe`）。
 
 ## 许可证
 

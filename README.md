@@ -1,14 +1,29 @@
 # dsh-file-upload
 
+<p align="center">
+  <a href="./README.md"><img src="https://img.shields.io/badge/English-Readme-blue?style=for-the-badge" alt="English"></a>
+  <a href="./README.zh-CN.md"><img src="https://img.shields.io/badge/中文-说明文档-red?style=for-the-badge" alt="中文"></a>
+</p>
+
 Windows file upload for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): a
-configurable hotkey opens the native Windows file dialog (via **PowerShell 7**, with a labeled
+configurable hotkey opens the **native Windows file dialog** (via **PowerShell 7**, with a labeled
 Windows PowerShell 5.1 fallback), then a graphical chooser lets you **copy files into the
 workspace**, **insert a safe file list into the composer**, or **both**. The UI is bilingual
-(中文 / English, switchable in Settings). Privacy is protected by default — see [Privacy](#privacy).
+(中文 / English). Privacy is protected by default — see [Privacy](#privacy).
 
 > ⚠️ Windows-only. Requires PowerShell 7 (recommended) or the built-in Windows PowerShell 5.1.
 
-[中文说明](./README.zh-CN.md)
+---
+
+## Screenshots
+
+| Native file dialog | Choose upload mode | Settings |
+|---|---|---|
+| <img src="docs/screenshots/dialog.png" width="260" alt="file dialog"> | <img src="docs/screenshots/chooser.png" width="260" alt="chooser"> | <img src="docs/screenshots/settings.png" width="260" alt="settings"> |
+
+*Screenshots live in `docs/screenshots/`. Add or replace them and re-run the commit.*
+
+---
 
 ## Features
 
@@ -18,12 +33,12 @@ workspace**, **insert a safe file list into the composer**, or **both**. The UI 
   (no persistent server — that design hung in some environments and was
   removed). Engine paths are resolved without probe processes, and every wait
   has a hard timeout, so the pick can never hang.
-- **Engine discovery**: PowerShell 7 first (MSI → PATH → `where pwsh` → Store alias →
-  Chocolatey), each candidate probed with a real spawn; Windows PowerShell 5.1 as a
-  clearly-labeled last resort. The result is cached.
+- **Engine discovery**: PowerShell 7 first (MSI → PATH → `where pwsh` → Store
+  alias → Chocolatey), Windows PowerShell 5.1 as a clearly-labeled last resort.
+  Each path is tried until one actually runs; the result is cached.
 - **Three upload modes** (graphical, no code switching):
-  - 📁 **Copy to workspace** — files land in `<workspace>\uploads\` (name collisions
-    become `name (1).ext`); the agent can read them.
+  - 📁 **Copy to workspace** — files land in `<workspace>\uploads\` (name
+    collisions become `name (1).ext`); the agent can read them.
   - ✏️ **Insert into input** — a safe file list is added to the composer.
   - 🔀 **Both** — copy *and* insert workspace-relative paths.
 - **Bilingual UI**: 中文 / English, switchable in Settings → File Upload.
@@ -88,9 +103,6 @@ copies drift.
 
 ## Troubleshooting
 
-- **"No usable PowerShell found"** — install PowerShell 7:
-  <https://github.com/PowerShell/PowerShell/releases>. The plugin also accepts the
-  built-in 5.1 (labeled in the modal).
 - **"open dialog failed"** — the first pick pays engine discovery (~1s); later
   picks reuse the cached path and are faster. The error text names the failing
   step; the engine discovery is spawn-free and every step has a timeout.
